@@ -442,7 +442,7 @@ SECURITY_STATUS CSSLClient::SSPINegotiateLoop(LPCWCHAR ServerName)
 	//
 
 	OutBuffers[0].pvBuffer = nullptr;
-	OutBuffers[0].BufferType = SECBUFFER_TOKEN;
+	OutBuffers[0].BufferType = SECBUFFER_TOKEN; //NOTE: In addition, the caller must pass in a buffer of type SECBUFFER_ALERT? See https://docs.microsoft.com/en-us/windows/win32/api/sspi/nf-sspi-initializesecuritycontexta?redirectedfrom=MSDN
 	OutBuffers[0].cbBuffer = 0;
 
 	OutBuffer.cBuffers = 1;
@@ -456,7 +456,7 @@ SECURITY_STATUS CSSLClient::SSPINegotiateLoop(LPCWCHAR ServerName)
 		const_cast<SEC_WCHAR *>(ServerName),
 		dwSSPIFlags,
 		0,
-		SECURITY_NATIVE_DREP,
+		SECURITY_NATIVE_DREP, //NOTE: This parameter is not used with Digest or Schannel. Set it to zero. See https://docs.microsoft.com/en-us/windows/win32/api/sspi/nf-sspi-initializesecuritycontexta?redirectedfrom=MSDN
 		nullptr,
 		0,
 		m_hContext.set(),
@@ -620,7 +620,7 @@ SECURITY_STATUS CSSLClient::SSPINegotiateLoop(LPCWCHAR ServerName)
 
 			CertContextHandle hServerCertContext;
 
-			HRESULT hr = g_pSSPI->QueryContextAttributes(m_hContext.getunsaferef(), SECPKG_ATTR_REMOTE_CERT_CONTEXT, hServerCertContext.set());
+			HRESULT hr = g_pSSPI->QueryContextAttributes(m_hContext.getunsaferef(), SECPKG_ATTR_REMOTE_CERT_CONTEXT, hServerCertContext.set()); //NOTE: SECPKG_ATTR_REMOTE_CERT_CONTEXT is only available in QueryContextAttributesEx? See https://docs.microsoft.com/en-us/windows/win32/api/sspi/nf-sspi-querycontextattributesexa
 
 			if (FAILED(hr))
 			{
@@ -1017,7 +1017,7 @@ SECURITY_STATUS CSSLClient::CreateCredentialsFromCertificate(PCredHandle phCreds
 	// Get a handle to the SSPI credential
 	Status = g_pSSPI->AcquireCredentialsHandle(
 		nullptr,                   // Name of principal
-		const_cast<WCHAR*>(UNISP_NAME), // Name of package
+		const_cast<WCHAR*>(UNISP_NAME), // Name of package  //NOTE: Why not SCHANNEL_NAME?
 		SECPKG_CRED_OUTBOUND,   // Flags indicating use
 		nullptr,                   // Pointer to logon ID
 		&SchannelCred,          // Package specific data
